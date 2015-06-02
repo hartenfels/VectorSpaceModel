@@ -30,4 +30,13 @@ sub index
 }
 
 
+sub query
+{
+    my ($self, $query) = @_;
+    my @words = split ' ', fc $query;
+    $stemmer->stem_in_place(\@words);
+    $self->fetch(\@words)
+}
+
+
 1
