@@ -10,7 +10,7 @@ build/libs/VectorSpaceModel-all.jar: src/main/java/*.java
 test: build
 	carton exec prove
 
-run:
+run: build
 	carton exec ./vsm
 
 clean:
