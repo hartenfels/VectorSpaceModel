@@ -1,6 +1,5 @@
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static java.lang.String.format;
 
@@ -23,7 +22,7 @@ public class InvertedIndex implements Serializable {
         documents.put(id, documents.getOrDefault(id, 0) + 1);
     }
 
-    public Map<Integer, Double> fetch(String[] query) {
+    public Result[] fetch(String[] query) {
         Map<Integer, Double> rankings = new HashMap<>();
 
         for (String token : query) {
@@ -35,7 +34,14 @@ public class InvertedIndex implements Serializable {
             }
         }
 
-        return rankings;
+        List<Result> results = new ArrayList<Result>();
+        for (Map.Entry<Integer, Double> e : rankings.entrySet()) {
+            results.add(new Result(e.getKey(), e.getValue()));
+        }
+
+        Result[] sorted = results.toArray(new Result[0]);
+        Arrays.sort(sorted);
+        return sorted;
     }
 
     public void stash(String path) {

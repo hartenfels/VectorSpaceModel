@@ -3,7 +3,7 @@ use warnings;
 use feature qw(fc);
 use Lingua::Stem::Snowball;
 use Inline Java => Config => Classpath => 'build/libs/VectorSpaceModel-all.jar';
-use Inline Java => 'STUDY', STUDY => [qw(InvertedIndex)];
+use Inline Java => 'STUDY', STUDY => [qw(InvertedIndex Result)];
 
 package InvertedIndex;
 
