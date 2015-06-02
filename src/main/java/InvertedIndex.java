@@ -1,4 +1,5 @@
 import java.io.*;
+import static java.lang.String.format;
 
 
 public class InvertedIndex implements Serializable
@@ -24,7 +25,7 @@ public class InvertedIndex implements Serializable
         }
         catch (IOException e)
         {
-            System.err.println("Error stashing `%s`: %s".format(path, e.getMessage()));
+            System.err.println(format("Error stashing `%s`: %s", path, e.getMessage()));
         }
     }
 
@@ -44,7 +45,7 @@ public class InvertedIndex implements Serializable
         }
         catch (IOException | ClassNotFoundException e)
         {
-            System.err.println("Error unstashing `%s`: %s".format(path, e.getMessage()));
+            System.err.println(format("Error unstashing `%s`: %s", path, e.getMessage()));
         }
 
         return index;
