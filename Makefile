@@ -4,7 +4,7 @@ install:
 	./install
 
 build: build/libs/VectorSpaceModel-all.jar
-build/libs/VectorSpaceModel-all.jar:
+build/libs/VectorSpaceModel-all.jar: src/main/java/*.java
 	gradle -q fatpack
 
 test: build
