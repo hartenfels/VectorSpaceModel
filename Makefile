@@ -11,11 +11,11 @@ test: build
 	carton exec prove
 
 run:
-	echo TODO
+	carton exec ./vsm
 
 clean:
-	gradle clean
-	rm -rf _Inline
+	rm -rf _Inline *.stash
+	gradle -q clean
 
 realclean: clean
 	rm -rf .gradle local cpanfile.snapshot
