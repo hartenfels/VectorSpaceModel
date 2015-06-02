@@ -1,12 +1,27 @@
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.lang.String.format;
 
 
 public class InvertedIndex implements Serializable {
 
+    public Map<String, Map<Integer, Integer>> occurrences;
+    public Map<Integer, Integer> documents; // docID -> length of document
+
+    public InvertedIndex() {
+        occurrences = new HashMap<>();
+    }
+
     public void addToken(int id, String token) {
-        throw new RuntimeException("Not implemented.");
+        occurrences.putIfAbsent(token, new HashMap<>());
+        Map<Integer, Integer> a = occurrences.get(token);
+        a.put(id, a.getOrDefault(id, 0) + 1);
+    }
+
+    public void addDocumentLength(int id, int length) {
+        documents.put(id, length);
     }
 
 
@@ -39,4 +54,19 @@ public class InvertedIndex implements Serializable {
         return index;
     }
 
+    public int documentFrequency(String token) {
+        return occurrences.get(token).size();
+    }
+
+    public double inverseDocumentFrequency(String token) {
+        return Math.log10(((double) documents.size()) / documentFrequency(token));
+    }
+
+    public int termFrequency(String token, int documentId) {
+        return occurrences.get(token).get(documentId);
+    }
+
+    public double weightDfIdf(String token, int documentId) {
+        return termFrequency(token, documentId) * inverseDocumentFrequency(token);
+    }
 }
