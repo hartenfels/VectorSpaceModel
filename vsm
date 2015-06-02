@@ -31,7 +31,7 @@ unless ($index->unstash($stash))
     }
 
     say 'Stashing...';
-    $index->stash($stash);
+    #$index->stash($stash);
 }
 
 say strftime 'Index built after %M:%S' => gmtime(time - $start);
@@ -41,17 +41,17 @@ my $term = Term::ReadLine->new('InvertedIndex');
 while (defined($_ = $term->readline('query: ')))
 {
     my @start = gettimeofday;
-    my @query = split ' ', decode 'UTF-8' => $_;
+    my @query = split ' ', ;
 
     if (@query)
     {
-        my $row = $index->fetch(@query)->toArray;
-        for (@$row)
+        my $results = $index->query(decode 'UTF-8' => $_);
+        for (@$results)
         {
-            seek $fh, $_, 0;
-            print $_, "\t", scalar <$fh>;
+            seek $fh, $_->{id}, 0;
+            print $_->{rank}, "\t", scalar <$fh>;
         }
-        say scalar @$row, ' results in ', tv_interval(\@start), ' seconds';
+        say scalar @$results, ' results in ', tv_interval(\@start), ' seconds';
     }
 }
 
