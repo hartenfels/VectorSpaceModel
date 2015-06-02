@@ -1,0 +1,5 @@
+_Inline
+.gradle
+build
+cpanfile.snapshot
+local
