@@ -33,5 +33,6 @@ public class Main {
 
         System.out.println(invertedIndex.occurrences);
         System.out.println(invertedIndex.documentFrequency("apple"));
+        System.out.println(invertedIndex.fetch(new String[]{"apple", "pear"}));
     }
 }

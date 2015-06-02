@@ -7,23 +7,36 @@ import static java.lang.String.format;
 
 public class InvertedIndex implements Serializable {
 
-    public Map<String, Map<Integer, Integer>> occurrences;
+    public Map<String, Map<Integer, Integer>> occurrences; // token -> (docID -> #occurrences)
     public Map<Integer, Integer> documents; // docID -> length of document
+
 
     public InvertedIndex() {
         occurrences = new HashMap<>();
+        documents = new HashMap<>();
     }
 
     public void addToken(int id, String token) {
         occurrences.putIfAbsent(token, new HashMap<>());
         Map<Integer, Integer> a = occurrences.get(token);
         a.put(id, a.getOrDefault(id, 0) + 1);
+        documents.put(id, documents.getOrDefault(id, 0) + 1);
     }
 
-    public void addDocumentLength(int id, int length) {
-        documents.put(id, length);
-    }
+    public Map<Integer, Double> fetch(String[] query) {
+        Map<Integer, Double> rankings = new HashMap<>();
 
+        for (String token : query) {
+            double globalWeight = inverseDocumentFrequency(token);
+            double queryWeight = globalWeight;
+
+            for (Map.Entry<Integer, Integer> e : occurrences.get(token).entrySet()) {
+                rankings.put(e.getKey(), rankings.getOrDefault(e.getKey(), 0D) + globalWeight * queryWeight * e.getValue());
+            }
+        }
+
+        return rankings;
+    }
 
     public void stash(String path) {
         try {
@@ -69,4 +82,5 @@ public class InvertedIndex implements Serializable {
     public double weightDfIdf(String token, int documentId) {
         return termFrequency(token, documentId) * inverseDocumentFrequency(token);
     }
+
 }
