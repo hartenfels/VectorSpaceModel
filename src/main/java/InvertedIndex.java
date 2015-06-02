@@ -7,7 +7,7 @@ import static java.lang.String.format;
 public class InvertedIndex implements Serializable {
 
     public Map<String, Map<Integer, Integer>> occurrences; // token -> (docID -> #occurrences)
-    public Map<Integer, Integer> documents; // docID -> length of document
+    public Map<Integer, Double> documents; // docID -> length of document
 
 
     public InvertedIndex() {
@@ -19,7 +19,7 @@ public class InvertedIndex implements Serializable {
         occurrences.putIfAbsent(token, new HashMap<>());
         Map<Integer, Integer> a = occurrences.get(token);
         a.put(id, a.getOrDefault(id, 0) + 1);
-        documents.put(id, documents.getOrDefault(id, 0) + 1);
+        documents.put(id, Math.sqrt(Math.pow(documents.getOrDefault(id, 0D), 2) + Math.pow(weightDfIdf(token, id), 2)));
     }
 
     public QueryResult[] fetch(String[] query) {
