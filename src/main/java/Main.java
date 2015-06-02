@@ -1,3 +1,5 @@
+import java.util.Arrays;
+
 public class Main {
     public static void main(String[] args) {
         InvertedIndex invertedIndex = new InvertedIndex();
@@ -33,6 +35,6 @@ public class Main {
 
         System.out.println(invertedIndex.occurrences);
         System.out.println(invertedIndex.documentFrequency("apple"));
-        System.out.println(invertedIndex.fetch(new String[]{"apple", "pear"}));
+        System.out.println(Arrays.toString(invertedIndex.fetch(new String[]{"apple", "pear"})));
     }
 }

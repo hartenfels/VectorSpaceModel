@@ -22,7 +22,7 @@ public class InvertedIndex implements Serializable {
         documents.put(id, documents.getOrDefault(id, 0) + 1);
     }
 
-    public Result[] fetch(String[] query) {
+    public QueryResult[] fetch(String[] query) {
         Map<Integer, Double> rankings = new HashMap<>();
 
         for (String token : query) {
@@ -34,12 +34,12 @@ public class InvertedIndex implements Serializable {
             }
         }
 
-        List<Result> results = new ArrayList<Result>();
+        List<QueryResult> queryResults = new ArrayList<QueryResult>();
         for (Map.Entry<Integer, Double> e : rankings.entrySet()) {
-            results.add(new Result(e.getKey(), e.getValue()));
+            queryResults.add(new QueryResult(e.getKey(), e.getValue()));
         }
 
-        Result[] sorted = results.toArray(new Result[0]);
+        QueryResult[] sorted = queryResults.toArray(new QueryResult[0]);
         Arrays.sort(sorted);
         return sorted;
     }
