@@ -26,11 +26,14 @@ public class InvertedIndex implements Serializable {
         Map<Integer, Double> rankings = new HashMap<>();
 
         for (String token : query) {
-            double globalWeight = inverseDocumentFrequency(token);
-            double queryWeight = globalWeight;
+            if (occurrences.containsKey(token)) {
+                double globalWeight = inverseDocumentFrequency(token);
+                double queryWeight = globalWeight;
 
-            for (Map.Entry<Integer, Integer> e : occurrences.get(token).entrySet()) {
-                rankings.put(e.getKey(), rankings.getOrDefault(e.getKey(), 0D) + globalWeight * queryWeight * e.getValue());
+                for (Map.Entry<Integer, Integer> e : occurrences.get(token).entrySet()) {
+                    double ranking = rankings.getOrDefault(e.getKey(), 0D) + globalWeight * queryWeight * e.getValue();
+                    rankings.put(e.getKey(), ranking);
+                }
             }
         }
 

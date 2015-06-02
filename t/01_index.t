@@ -17,6 +17,7 @@ sub fetch_is
     is_deeply [map { $_->{id} } @$got], $want, "query for `$query`";
 }
 
+fetch_is 'mug'     => [];
 fetch_is 'water'   => [5];
 fetch_is 'coffee'  => [4, 1, 3];
 fetch_is 'cup jar' => [4, 3, 2, 5];
