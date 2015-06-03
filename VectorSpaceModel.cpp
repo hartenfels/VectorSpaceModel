@@ -119,12 +119,14 @@ public:
     }
 
 
-    /* Dumps the index into a Perl hash of [id, frequency] pairs.
+    /* Dumps this index into Perl. The result will be a hashref with the keys
+     * `index` and `documents`. The index will be a mapping from tokens to
+     * [id, frequency] pairs and the documents will just be a mapping from id
+     * to document vector length.
      * Used in testing only. */
-    SV* dump_index() const
+    SV* dump() const
     {
         HV* idx = newHV();
-
         for (const auto& p : index)
         {
             AV* entries = newAV();
@@ -136,23 +138,17 @@ public:
                      newRV_noinc(reinterpret_cast<SV*>(entries)), 0);
         }
 
-        return newRV_noinc(reinterpret_cast<SV*>(idx));
-    }
-
-
-    /* Dumps the document lengths into a Perl hash.
-     * Used in testing only. */
-    SV* dump_documents() const
-    {
         HV* docs = newHV();
-
         for (const auto& p : documents)
         {
             std::string key = std::to_string(p.first);
             hv_store(docs, key.c_str(), key.size(), newSVnv(p.second), 0);
         }
 
-        return newRV_noinc(reinterpret_cast<SV*>(docs));
+        HV* dump = newHV();
+        hv_stores(dump, "index",     newRV_noinc(reinterpret_cast<SV*>(idx )));
+        hv_stores(dump, "documents", newRV_noinc(reinterpret_cast<SV*>(docs)));
+        return newRV_noinc(reinterpret_cast<SV*>(dump));
     }
 
 
