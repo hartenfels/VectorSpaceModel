@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 
+/* Make an std::string from a perl scalar value (SV). */
 static std::string string_from_sv(SV* sv)
 {
     STRLEN len;
@@ -11,9 +12,16 @@ static std::string string_from_sv(SV* sv)
 }
 
 
+/* Utility function to fetch the rank from a result.
+ * The result is an arrayref of the form [id, rank], so
+ * this just does $result->[1] and returns it as a double. */
 static double rank_from_result(SV* result)
 {   return SvNV(*av_fetch(reinterpret_cast<AV*>(SvRV(result)), 1, 0)); }
 
+/* Sort callback, used to sort the results from `fetch` by their rank. It is
+ * sorted in descending order, so that the highest-ranking entry is at the top.
+ * That weird pTHX_ thing is the current perl interpreter context, but we don't
+ * actually need it here. */
 static I32 sort_ratings(pTHX_ SV* const sv1, SV* const sv2)
 {
     double rank1 = rank_from_result(sv1),
@@ -24,10 +32,14 @@ static I32 sort_ratings(pTHX_ SV* const sv1, SV* const sv2)
 }
 
 
+/* An entry in the InvertedIndex. Maps document IDs to the
+ * number of times a token appears in the document. */
 struct Entry
 {
     int id, frequency;
 
+    /* Dump this Entry as an arrayref of the form [id, frequency].
+     * Used for testing only. */
     SV* dump() const
     {
         AV* entry = newAV();
@@ -38,11 +50,16 @@ struct Entry
 };
 
 
+/* The best inverted index in the solar system and beyond. */
 class InvertedIndex
 {
 
 public:
 
+    /* Add a document with the given ID and arrayref of tokens to the index.
+     * Each time this is called, the given ID must be greater than the previous
+     * one. The IDs need not be sequential, however.
+     * Call this from Perl like `$index->add_document(123, ['cup', 'tea'])`. */
     void add_document(int id, SV* tokens)
     {
         std::unordered_map<std::string, int> vec;
@@ -64,7 +81,12 @@ public:
     }
 
 
-    SV* fetch(SV* tokens)
+    /* Run a query and return a list of ranked results.
+     * Call this from Perl like `$index->fetch(['water', 'jar'])`. The result
+     * will be an arrayref, with each entry of it being an arrayref of the form
+     * [id, rank]. They will be sorted by their rank in descending order, so the
+     * most relevant document will be at the top. */
+    SV* fetch(SV* tokens) const
     {
         std::unordered_map<int, double> rankings;
         AV* av = reinterpret_cast<AV*>(SvRV(tokens));
@@ -91,11 +113,14 @@ public:
             av_push(entry, newSVnv(p.second));
             av_push(results, newRV_noinc(reinterpret_cast<SV*>(entry)));
         }
+
         sortsv(AvARRAY(results), av_top_index(results) + 1, sort_ratings);
         return newRV_noinc(reinterpret_cast<SV*>(results));
     }
 
 
+    /* Dumps the index into a Perl hash of [id, frequency] pairs.
+     * Used in testing only. */
     SV* dump_index() const
     {
         HV* idx = newHV();
@@ -115,6 +140,8 @@ public:
     }
 
 
+    /* Dumps the document lengths into a Perl hash.
+     * Used in testing only. */
     SV* dump_documents() const
     {
         HV* docs = newHV();
@@ -131,7 +158,12 @@ public:
 
 private:
 
+    /* Map from token to document ID and token frequency.
+     * The list of entries are be sorted ascending by ID,
+     * unless someone broke contract when calling `add_document`. */
     std::unordered_map<std::string, std::list<Entry> > index;
+
+    /* Map from document ID to length of the document vector. */
     std::unordered_map<int, double> documents;
 
 };
