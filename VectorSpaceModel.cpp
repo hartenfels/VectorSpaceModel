@@ -97,7 +97,7 @@ public:
             auto it = index.find(token);
             if (it != index.end())
             {
-                double w_global = 1.0 * documents.size() / it->second.size();
+                double w_global = log10(1.0 * documents.size() / it->second.size());
                 double w_query  = w_global; // FIXME this ain't right
 
                 for (const Entry& e : it->second)
