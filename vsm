@@ -18,8 +18,8 @@ my $start = time;
 my $index = InvertedIndex->new;
 open my $fh, '<', $docs or die "Couldn't read $docs: $!\n";
 
-#say "Trying to unstash $stash...";
-#unless ($index->unstash($stash))
+say "Trying to unstash $stash...";
+unless ($index->unstash($stash))
 {
     say "Indexing $docs...";
     for (;;)
@@ -29,8 +29,8 @@ open my $fh, '<', $docs or die "Couldn't read $docs: $!\n";
         $index->index($id, decode 'UTF-8' => $document);
     }
 
-#    say 'Stashing...';
-#    $index->stash($stash);
+    say 'Stashing...';
+    $index->stash($stash);
 }
 
 say strftime 'Index built after %M:%S' => gmtime(time - $start);

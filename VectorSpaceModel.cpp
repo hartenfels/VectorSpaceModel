@@ -1,3 +1,4 @@
+#include <fstream>
 #include <list>
 #include <string>
 #include <unordered_map>
@@ -29,6 +30,19 @@ static I32 sort_ratings(pTHX_ SV* const sv1, SV* const sv2)
     return rank1 < rank2 ?  1
          : rank1 > rank2 ? -1
          :                  0;
+}
+
+
+template <typename T> static void
+pack(const T& t, std::ofstream& out)
+{   out.write(reinterpret_cast<const char*>(&t), sizeof(T)); }
+
+template <typename T> static T
+unpack(std::ifstream& in)
+{
+    T t;
+    in.read(reinterpret_cast<char*>(&t), sizeof(T));
+    return t;
 }
 
 
@@ -132,6 +146,57 @@ public:
         }
 
         return newRV_noinc(reinterpret_cast<SV*>(idx));
+    }
+
+
+    bool stash(const char* path)
+    {
+        std::ofstream out(path);
+        if (!out)
+        {
+            warn("Couldn't write to stash.\n");
+            return false;
+        }
+
+        pack(documents, out);
+        for (auto p : index)
+        {
+            pack(p.first.size(), out);
+            out.write(p.first.c_str(), p.first.size());
+
+            pack(p.second.size(), out);
+            for (const Entry& e : p.second)
+            {   pack(e, out); }
+        }
+
+        out.close();
+        return out.good();
+    }
+
+
+    bool unstash(const char* path)
+    {
+        std::ifstream in(path);
+        if (!in)
+        {
+            warn("Couldn't read from stash.\n");
+            return false;
+        }
+
+        documents = unpack<int>(in);
+        while (in.peek() != EOF)
+        {
+            auto length = unpack<std::string::size_type>(in);
+            std::string token(length, ' ');
+            in.read(&token[0], length);
+
+            std::list<Entry>& entries = index[token];
+            auto count = unpack<std::list<Entry>::size_type>(in);
+            while (count--)
+            {   entries.push_back(unpack<Entry>(in)); }
+        }
+
+        return true;
     }
 
 

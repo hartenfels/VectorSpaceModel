@@ -1,5 +1,5 @@
 use Test::Most;
-use List::Util qw(sum);
+use File::Temp qw(tmpnam);
 use InvertedIndex;
 
 
@@ -18,6 +18,14 @@ is_deeply $index->dump, {
     tea    => [        [2, 2],         [4, 1]        ],
     water  => [                                [5, 2]],
 }, 'index is filled correctly';
+
+
+my $path = tmpnam;
+ok $index->stash($path), 'stashing the index to a file';
+
+my $clone = InvertedIndex->new;
+ok $clone->unstash($path), 'reconstituting index from stash';
+is_deeply $clone->dump, $index->dump, 'unstashing gives the stashed index';
 
 
 done_testing
