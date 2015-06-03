@@ -2,8 +2,10 @@ use strict;
 use warnings;
 use feature qw(fc);
 use Lingua::Stem::Snowball;
-use Inline Java => Config => Classpath => 'build/libs/VectorSpaceModel-all.jar';
-use Inline Java => 'STUDY', STUDY => [qw(InvertedIndex QueryResult)];
+use Inline CPP => config => ccflags => '-std=c++11 -pedantic';
+use Inline CPP => './VectorSpaceModel.cpp';
+#use Inline Java => Config => Classpath => 'build/libs/VectorSpaceModel-all.jar';
+#use Inline Java => 'STUDY', STUDY => [qw(InvertedIndex QueryResult)];
 
 package InvertedIndex;
 
@@ -26,7 +28,7 @@ sub index
     my ($self, $id, $document) = @_;
     my @words = grep { not exists $stopwords{$_} } split ' ', fc $document;
     $stemmer->stem_in_place(\@words);
-    $self->addToken($id, $_) for @words;
+    $self->add_token($id, $_) for @words;
 }
 
 
