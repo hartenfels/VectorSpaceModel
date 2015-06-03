@@ -3,6 +3,27 @@
 #include <unordered_map>
 
 
+static std::string string_from_sv(SV* sv)
+{
+    STRLEN len;
+    const char* str = SvPV(sv, len);
+    return std::string(str, len);
+}
+
+
+static double rank_from_result(SV* result)
+{   return SvNV(*av_fetch(reinterpret_cast<AV*>(SvRV(result)), 1, 0)); }
+
+static I32 sort_ratings(pTHX_ SV* const sv1, SV* const sv2)
+{
+    double rank1 = rank_from_result(sv1),
+           rank2 = rank_from_result(sv2);
+    return rank1 < rank2 ?  1
+         : rank1 > rank2 ? -1
+         :                  0;
+}
+
+
 struct Entry
 {
     int id, frequency;
@@ -22,13 +43,6 @@ class InvertedIndex
 
 public:
 
-    double df(const std::string& token)
-    {   return index[token].size(); }
-
-    double idf(const std::string& token)
-    {   return log10(documents.size() / df(token)); }
-
-
     void add_document(int id, SV* tokens)
     {
         std::unordered_map<std::string, int> vec;
@@ -36,9 +50,8 @@ public:
 
         for (int i = 0; i <= av_top_index(av); ++i)
         {
-            STRLEN      len;
-            const char* str = SvPV(*av_fetch(av, i, 0), len);
-            ++vec[std::string(str, len)];
+            std::string token = string_from_sv(*av_fetch(av, i, 0));
+            ++vec[token];
         }
 
         double veclen = 0;
@@ -48,6 +61,38 @@ public:
             veclen += pow(p.second, 2);
         }
         documents[id] = sqrt(veclen);
+    }
+
+
+    SV* fetch(SV* tokens)
+    {
+        std::unordered_map<int, double> rankings;
+        AV* av = reinterpret_cast<AV*>(SvRV(tokens));
+
+        for (int i = 0; i <= av_top_index(av); ++i)
+        {
+            std::string token = string_from_sv(*av_fetch(av, i, 0));
+            auto it = index.find(token);
+            if (it != index.end())
+            {
+                double w_global = 1.0 * documents.size() / it->second.size();
+                double w_query  = w_global; // FIXME this ain't right
+
+                for (const Entry& e : it->second)
+                {   rankings[e.id] += w_global * w_query * e.frequency; }
+            }
+        }
+
+        AV* results = newAV();
+        for (const auto& p : rankings)
+        {
+            AV* entry = newAV();
+            av_push(entry, newSViv(p.first));
+            av_push(entry, newSVnv(p.second));
+            av_push(results, newRV_noinc(reinterpret_cast<SV*>(entry)));
+        }
+        sortsv(AvARRAY(results), av_top_index(results) + 1, sort_ratings);
+        return newRV_noinc(reinterpret_cast<SV*>(results));
     }
 
 

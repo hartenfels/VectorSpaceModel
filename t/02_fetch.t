@@ -11,8 +11,8 @@ while (<DATA>)
 sub fetch_is
 {
     my ($query, $want) = @_;
-    my $got = $index->query($query);
-    is_deeply [map { $_->{id} } @$got], $want, "query for `$query`";
+    my $got = $index->fetch([split ' ', $query]);
+    is_deeply [map { $_->[0] } @$got], $want, "query for `$query`";
 }
 
 fetch_is 'mug'     => [];
