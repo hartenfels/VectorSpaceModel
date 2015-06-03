@@ -29,15 +29,15 @@ public:
     {   return log10(documents.size() / df(token)); }
 
 
-    void add_document(int id, ...)
+    void add_document(int id, SV* tokens)
     {
-        Inline_Stack_Vars; // $self, $id, @tokens
         std::unordered_map<std::string, int> vec;
+        AV* av = reinterpret_cast<AV*>(SvRV(tokens));
 
-        for (int i = 2; i < Inline_Stack_Items; ++i)
+        for (int i = 0; i <= av_top_index(av); ++i)
         {
             STRLEN      len;
-            const char* str = SvPV(Inline_Stack_Item(i), len);
+            const char* str = SvPV(*av_fetch(av, i, 0), len);
             ++vec[std::string(str, len)];
         }
 

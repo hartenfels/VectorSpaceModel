@@ -5,7 +5,7 @@ use InvertedIndex;
 my $index = InvertedIndex->new;
 
 while (<DATA>)
-{   $index->add_document($., split ' ') }
+{   $index->add_document($., [split ' ']) }
 
 
 sub fetch_is

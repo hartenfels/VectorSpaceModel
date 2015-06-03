@@ -8,7 +8,7 @@ is_deeply $index->dump_documents, {}, 'initial document lengths is empty';
 
 
 while (<DATA>)
-{   $index->add_document($., split ' ') }
+{   $index->add_document($., [split ' ']) }
 
 
 is_deeply $index->dump_index, {
