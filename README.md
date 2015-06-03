@@ -1,3 +1,9 @@
 # VectorSpaceModel
 
-marco and polo but spain
+## Prerequisites
+* Ubuntu or something similar
+* carton
+* g++
+
+## Running
+* `make` Installs some dependencies, runs tests, and runs the program
