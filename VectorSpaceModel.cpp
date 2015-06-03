@@ -110,7 +110,7 @@ public:
         {
             AV* entry = newAV();
             av_push(entry, newSViv(p.first));
-            av_push(entry, newSVnv(p.second));
+            av_push(entry, newSVnv(p.second / documents.find(p.first)->second));
             av_push(results, newRV_noinc(reinterpret_cast<SV*>(entry)));
         }
 

@@ -17,8 +17,8 @@ sub fetch_is
 
 fetch_is 'mug'     => [];
 fetch_is 'water'   => [5];
-fetch_is 'coffee'  => [4, 1, 3];
-fetch_is 'cup jar' => [4, 3, 2, 5];
+fetch_is 'coffee'  => [1, 4, 3];
+fetch_is 'cup jar' => [3, 4, 2, 5];
 
 
 done_testing
