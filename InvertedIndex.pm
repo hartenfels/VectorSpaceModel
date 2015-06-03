@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use feature qw(fc);
 use Lingua::Stem::Snowball;
-use Inline CPP => config => ccflags => '-std=c++11 -pedantic';
+use Inline CPP => config => ccflags => '-std=c++11';
 use Inline CPP => './VectorSpaceModel.cpp';
 
 
