@@ -2,7 +2,6 @@
 use strict;
 use warnings;
 use feature     qw(say);
-use autodie;
 use Encode      qw(decode);
 use POSIX       qw(strftime);
 use Term::ReadLine;
@@ -17,7 +16,7 @@ my $stash = "$docs.stash";
 say 'Building index...';
 my $start = time;
 my $index = InvertedIndex->new;
-open my $fh, '<', $docs;
+open my $fh, '<', $docs or die "Couldn't read $docs: $!\n";
 
 #say "Trying to unstash $stash...";
 #unless ($index->unstash($stash))
@@ -46,12 +45,19 @@ while (defined($_ = $term->readline('query: ')))
     if (@query)
     {
         my $results = $index->query(decode 'UTF-8' => $_);
+        my $time    = tv_interval(\@start);
+
+        my $pid = open my $pager, '|-', 'less' or die "Couldn't less: $!\n";
+
+        say {$pager} scalar @$results, " results in $time seconds";
         for (@$results)
         {
             seek $fh, $_->[0], 0;
-            print $_->[1], "\t", scalar <$fh>;
+            print {$pager} $_->[1], "\t", scalar <$fh>;
         }
-        say scalar @$results, ' results in ', tv_interval(\@start), ' seconds';
+        close $pager;
+
+        waitpid $pid, 0;
     }
 }
 
