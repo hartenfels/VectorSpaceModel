@@ -40,16 +40,18 @@ my $term = Term::ReadLine->new('InvertedIndex');
 while (defined($_ = $term->readline('query: ')))
 {
     my @start = gettimeofday;
-    my @query = split ' ', ;
+    my @query = split ' ';
 
     if (@query)
     {
-        my $results = $index->query(decode 'UTF-8' => $_);
-        my $time    = tv_interval(\@start);
+        my ($actual, $results) = $index->query(decode 'UTF-8' => $_);
+        my  $time_taken        = tv_interval(\@start);
 
+        local $SIG{PIPE} = 'IGNORE';
         my $pid = open my $pager, '|-', 'less' or die "Couldn't less: $!\n";
 
-        say {$pager} scalar @$results, " results in $time seconds";
+        say {$pager} 'Query: ', join(' ', @query), ' (', join(' ', @$actual), ')';
+        say {$pager} scalar @$results, " results in $time_taken seconds";
         for (@$results)
         {
             seek $fh, $_->[0], 0;
