@@ -1,5 +1,0 @@
-coffee coffee
-cup jar jar tea
-coffee cup cup jar
-tea coffee coffee coffee cup cup cup jar jar jar
-water water jar jar
