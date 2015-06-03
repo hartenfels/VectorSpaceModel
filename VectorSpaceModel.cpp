@@ -62,7 +62,7 @@ public:
      * Call this from Perl like `$index->add_document(123, ['cup', 'tea'])`. */
     void add_document(int id, SV* tokens)
     {
-        std::unordered_map<std::string, int> vec;
+        auto& vec = documents[id];
         AV* av = reinterpret_cast<AV*>(SvRV(tokens));
 
         for (int i = 0; i <= av_top_index(av); ++i)
@@ -71,13 +71,21 @@ public:
             ++vec[token];
         }
 
-        double veclen = 0;
         for (const auto& p : vec)
+        {   index[p.first].push_back({id, p.second}); }
+    }
+
+
+    double doclength(int id) const
+    {
+        double length = 0;
+        for (const auto& p : documents.find(id)->second)
         {
-            index[p.first].push_back({id, p.second});
-            veclen += pow(p.second, 2);
+            double df       = index.find(p.first)->second.size();
+            double w_global = log10(documents.size() / df);
+            length         += pow(p.second * w_global, 2);
         }
-        documents[id] = sqrt(veclen);
+        return sqrt(length);
     }
 
 
@@ -110,7 +118,7 @@ public:
         {
             AV* entry = newAV();
             av_push(entry, newSViv(p.first));
-            av_push(entry, newSVnv(p.second / documents.find(p.first)->second));
+            av_push(entry, newSVnv(p.second / doclength(p.first)));
             av_push(results, newRV_noinc(reinterpret_cast<SV*>(entry)));
         }
 
@@ -121,8 +129,8 @@ public:
 
     /* Dumps this index into Perl. The result will be a hashref with the keys
      * `index` and `documents`. The index will be a mapping from tokens to
-     * [id, frequency] pairs and the documents will just be a mapping from id
-     * to document vector length.
+     * [id, frequency] pairs. The documents will just be a mapping from id to
+     * document vector length, rounded to two digits after the decimal point.
      * Used in testing only. */
     SV* dump() const
     {
@@ -142,7 +150,8 @@ public:
         for (const auto& p : documents)
         {
             std::string key = std::to_string(p.first);
-            hv_store(docs, key.c_str(), key.size(), newSVnv(p.second), 0);
+            hv_store(docs, key.c_str(), key.size(),
+                     newSVpvf("%.2f", doclength(p.first)), 0);
         }
 
         HV* dump = newHV();
@@ -159,7 +168,7 @@ private:
      * unless someone broke contract when calling `add_document`. */
     std::unordered_map<std::string, std::list<Entry> > index;
 
-    /* Map from document ID to length of the document vector. */
-    std::unordered_map<int, double> documents;
+    /* Map from document ID to document vector. */
+    std::unordered_map<int, std::unordered_map<std::string, int>> documents;
 
 };
