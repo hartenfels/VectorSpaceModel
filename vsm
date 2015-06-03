@@ -19,19 +19,19 @@ my $start = time;
 my $index = InvertedIndex->new;
 open my $fh, '<', $docs;
 
-say "Trying to unstash $stash...";
-unless ($index->unstash($stash))
+#say "Trying to unstash $stash...";
+#unless ($index->unstash($stash))
 {
     say "Indexing $docs...";
-    for (1 .. 100)
+    for (;;)
     {
         my $id       = tell $fh;
         my $document = <$fh> // last;
         $index->index($id, decode 'UTF-8' => $document);
     }
 
-    say 'Stashing...';
-    #$index->stash($stash);
+#    say 'Stashing...';
+#    $index->stash($stash);
 }
 
 say strftime 'Index built after %M:%S' => gmtime(time - $start);
@@ -48,8 +48,8 @@ while (defined($_ = $term->readline('query: ')))
         my $results = $index->query(decode 'UTF-8' => $_);
         for (@$results)
         {
-            seek $fh, $_->{id}, 0;
-            print $_->{rank}, "\t", scalar <$fh>;
+            seek $fh, $_->[0], 0;
+            print $_->[1], "\t", scalar <$fh>;
         }
         say scalar @$results, ' results in ', tv_interval(\@start), ' seconds';
     }

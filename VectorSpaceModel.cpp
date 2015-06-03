@@ -62,7 +62,7 @@ public:
      * Call this from Perl like `$index->add_document(123, ['cup', 'tea'])`. */
     void add_document(int id, SV* tokens)
     {
-        auto& vec = documents[id];
+        std::unordered_map<std::string, int> vec;
         AV* av = reinterpret_cast<AV*>(SvRV(tokens));
 
         for (int i = 0; i <= av_top_index(av); ++i)
@@ -73,19 +73,8 @@ public:
 
         for (const auto& p : vec)
         {   index[p.first].push_back({id, p.second}); }
-    }
 
-
-    double doclength(int id) const
-    {
-        double length = 0;
-        for (const auto& p : documents.find(id)->second)
-        {
-            double df       = index.find(p.first)->second.size();
-            double w_global = log10(documents.size() / df);
-            length         += pow(p.second * w_global, 2);
-        }
-        return sqrt(length);
+        ++documents;
     }
 
 
@@ -105,7 +94,7 @@ public:
             auto it = index.find(token);
             if (it != index.end())
             {
-                double w_global = log10(1.0 * documents.size() / it->second.size());
+                double w_global = log10(1.0 * documents / it->second.size());
                 double w_query  = w_global; // FIXME this ain't right
 
                 for (const Entry& e : it->second)
@@ -118,7 +107,7 @@ public:
         {
             AV* entry = newAV();
             av_push(entry, newSViv(p.first));
-            av_push(entry, newSVnv(p.second / doclength(p.first)));
+            av_push(entry, newSVnv(p.second));
             av_push(results, newRV_noinc(reinterpret_cast<SV*>(entry)));
         }
 
@@ -127,14 +116,10 @@ public:
     }
 
 
-    /* Dumps this index into Perl. The result will be a hashref with the keys
-     * `index` and `documents`. The index will be a mapping from tokens to
-     * [id, frequency] pairs. The documents will just be a mapping from id to
-     * document vector length, rounded to two digits after the decimal point.
-     * Used in testing only. */
     SV* dump() const
     {
         HV* idx = newHV();
+
         for (const auto& p : index)
         {
             AV* entries = newAV();
@@ -146,29 +131,17 @@ public:
                      newRV_noinc(reinterpret_cast<SV*>(entries)), 0);
         }
 
-        HV* docs = newHV();
-        for (const auto& p : documents)
-        {
-            std::string key = std::to_string(p.first);
-            hv_store(docs, key.c_str(), key.size(),
-                     newSVpvf("%.2f", doclength(p.first)), 0);
-        }
-
-        HV* dump = newHV();
-        hv_stores(dump, "index",     newRV_noinc(reinterpret_cast<SV*>(idx )));
-        hv_stores(dump, "documents", newRV_noinc(reinterpret_cast<SV*>(docs)));
-        return newRV_noinc(reinterpret_cast<SV*>(dump));
+        return newRV_noinc(reinterpret_cast<SV*>(idx));
     }
 
 
 private:
 
+    int documents;
+
     /* Map from token to document ID and token frequency.
      * The list of entries are be sorted ascending by ID,
      * unless someone broke contract when calling `add_document`. */
     std::unordered_map<std::string, std::list<Entry> > index;
-
-    /* Map from document ID to document vector. */
-    std::unordered_map<int, std::unordered_map<std::string, int>> documents;
 
 };
