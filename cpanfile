@@ -1,6 +1,6 @@
 requires perl => '5.016';
 
-requires 'Inline::Java';
+requires 'Inline::CPP';
 requires 'Lingua::Stem::Snowball';
 requires 'Term::ReadLine::Gnu';
 
