@@ -1,7 +1,7 @@
 all: install test run
 
 install:
-	./install
+	carton install
 
 build: build/libs/VectorSpaceModel-all.jar
 build/libs/VectorSpaceModel-all.jar: src/main/java/*.java
