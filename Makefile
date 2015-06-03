@@ -3,21 +3,16 @@ all: install test run
 install:
 	carton install
 
-build: build/libs/VectorSpaceModel-all.jar
-build/libs/VectorSpaceModel-all.jar: src/main/java/*.java
-	gradle -q fatpack
-
-test: build
+test:
 	carton exec prove
 
-run: build
+run:
 	carton exec ./vsm
 
 clean:
 	rm -rf _Inline *.stash
-	gradle -q clean
 
 realclean: clean
-	rm -rf .gradle local cpanfile.snapshot
+	rm -rf local cpanfile.snapshot
 
 .PHONY: all install test run clean realclean
