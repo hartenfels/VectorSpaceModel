@@ -233,7 +233,7 @@ public:
         auto lengths_size = unpack<decltype(lengths)::size_type>(in);
         while (lengths_size--)
         {
-            int id      = unpack<int>(in);
+            int id      = unpack<int   >(in);
             lengths[id] = unpack<double>(in);
         }
 
