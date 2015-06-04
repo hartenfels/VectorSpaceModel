@@ -58,7 +58,7 @@ while (defined($_ = $term->readline('query: ')))
         for (@$results)
         {
             seek $fh, $_->[0], 0;
-            print {$pager} $_->[1], "\t", scalar <$fh>;
+            print {$pager} sprintf('%.2f', $_->[1]), "\t", scalar <$fh>;
         }
         close $pager;
 
