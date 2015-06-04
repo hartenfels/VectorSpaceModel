@@ -1,7 +1,7 @@
 #include <fstream>
-#include <list>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 
 /* Make an std::string from a perl scalar value (SV). */
@@ -244,8 +244,9 @@ public:
             std::string token(length, ' ');
             in.read(&token[0], length);
 
+            auto  count   = unpack<decltype(index)::mapped_type::size_type>(in);
             auto& entries = index[token];
-            auto count = unpack<decltype(index)::mapped_type::size_type>(in);
+            entries.reserve(count);
             while (count--)
             {
                 int id = unpack<int>(in);
@@ -262,7 +263,7 @@ private:
     /* Map from token to document ID and token frequency.
      * The list of entries are be sorted ascending by ID,
      * unless someone broke contract when calling `add_document`. */
-    std::unordered_map<std::string, std::list<std::pair<int, int> > > index;
+    std::unordered_map<std::string, std::vector<std::pair<int, int> > > index;
 
     /* Map from document ID to document length. */
     std::unordered_map<int, double> lengths;
