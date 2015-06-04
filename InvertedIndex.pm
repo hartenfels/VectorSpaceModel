@@ -36,7 +36,7 @@ sub query
     my ($self, $query) = @_;
     my @words = split ' ', fc $query;
     $stemmer->stem_in_place(\@words);
-    (\@words, $self->fetch(\@words))
+    return (\@words, $self->fetch(\@words));
 }
 
 
