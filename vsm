@@ -29,6 +29,9 @@ unless ($index->unstash($stash))
         $index->index($id, decode 'UTF-8' => $document);
     }
 
+    say 'Calculating lengths...';
+    $index->calculate_lengths;
+
     say 'Stashing...';
     $index->stash($stash);
 }
