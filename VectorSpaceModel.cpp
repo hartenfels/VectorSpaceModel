@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <thread>
 
 
 /* Make an std::string from a perl scalar value (SV). */
@@ -54,6 +55,12 @@ class InvertedIndex
 
 public:
 
+    ~InvertedIndex()
+    {
+        if (worker.joinable())
+        {   worker.join(); }
+    }
+
     /* Add a document with the given ID and arrayref of tokens to the index.
      * Each time this is called, the given ID must be greater than the previous
      * one. The IDs need not be sequential, however.
@@ -103,6 +110,9 @@ public:
         const double N = lengths.size();
         std::unordered_map<int, double> rankings;
         AV* av = reinterpret_cast<AV*>(SvRV(tokens));
+
+        if (worker.joinable())
+        {   worker.join(); }
 
         for (int i = 0; i <= av_top_index(av); ++i)
         {
@@ -219,16 +229,28 @@ public:
         return out.good();
     }
 
+
     /* Reconstitutes a stashed file and returns wether it worked.
      * See also `stash`. */
     bool unstash(const char* path)
     {
-        std::ifstream in(path);
-        if (!in)
+        instream = new std::ifstream(path);
+        if (!*instream)
         {
             warn("Couldn't read from stash.\n");
             return false;
         }
+        std::cout << "Unstashing in background.\n";
+        worker = std::thread([this](){ unstash_in_background(); });
+        return true;
+    }
+
+
+private:
+
+    void unstash_in_background()
+    {
+        std::ifstream& in = *instream;
 
         auto lengths_size = unpack<decltype(lengths)::size_type>(in);
         while (lengths_size--)
@@ -254,11 +276,9 @@ public:
             }
         }
 
-        return true;
+        delete instream;
+        instream = nullptr;
     }
-
-
-private:
 
     /* Map from token to document ID and token frequency.
      * The list of entries are be sorted ascending by ID,
@@ -267,5 +287,8 @@ private:
 
     /* Map from document ID to document length. */
     std::unordered_map<int, double> lengths;
+
+    std::ifstream* instream;
+    mutable std::thread worker;
 
 };
