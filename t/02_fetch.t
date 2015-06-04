@@ -1,5 +1,5 @@
 use Test::Most;
-use InvertedIndex;
+use VectorSpaceModel;
 
 
 my $index = InvertedIndex->new;

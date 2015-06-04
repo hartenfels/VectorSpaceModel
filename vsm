@@ -6,7 +6,7 @@ use Encode      qw(decode);
 use POSIX       qw(strftime);
 use Term::ReadLine;
 use Time::HiRes qw(gettimeofday tv_interval);
-use InvertedIndex;
+use VectorSpaceModel;
 
 
 my $docs  = shift // 'training.txt';

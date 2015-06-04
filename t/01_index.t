@@ -1,6 +1,6 @@
 use Test::Most;
 use File::Temp qw(tmpnam);
-use InvertedIndex;
+use VectorSpaceModel;
 
 
 my $index = InvertedIndex->new;
