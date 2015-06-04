@@ -53,12 +53,15 @@ while (defined($_ = $term->readline('query: ')))
         local $SIG{PIPE} = 'IGNORE';
         my $pid = open my $pager, '|-', 'less' or die "Couldn't less: $!\n";
 
-        say {$pager} 'Query: ', join(' ', @query), ' (', join(' ', @$actual), ')';
+        local $" = ' ';
+        say {$pager} "Query: @query (@$actual)";
         say {$pager} scalar @$results, " results in $time_taken seconds";
+        say {$pager} ' Rank |     ID     | Document';
         for (@$results)
         {
-            seek $fh, $_->[0], 0;
-            print {$pager} sprintf('%.2f', $_->[1]), "\t", scalar <$fh>;
+            my ($id, $rank) = @$_;
+            seek $fh, $id, 0;
+            printf {$pager} '%5.2f | %10d | %s', $rank, $id, scalar <$fh> or last;
         }
         close $pager;
 
