@@ -33,10 +33,12 @@ static I32 sort_ratings(pTHX_ SV* const sv1, SV* const sv2)
 }
 
 
+/* Pack the given thing into the given output stream as raw bytes. */
 template <typename T> static void
 pack(const T& t, std::ofstream& out)
 {   out.write(reinterpret_cast<const char*>(&t), sizeof(T)); }
 
+/* Unpack raw bytes into a thing of the given type. */
 template <typename T> static T
 unpack(std::ifstream& in)
 {
@@ -67,23 +69,25 @@ public:
             ++vec[token];
         }
 
-        for (const auto& token_tf : vec)
-        {   index[token_tf.first].push_back({id, token_tf.second}); }
+        for (const auto& token2tf : vec)
+        {   index[token2tf.first].push_back({id, token2tf.second}); }
 
         lengths[id] = 0;
     }
 
 
+    /* Calculates all document lengths.
+     * Call this once you're done adding documents. */
     void calculate_lengths()
     {
         const double N = lengths.size();
-        for (const auto& token_entries : index)
+        for (const auto& token2entries : index)
         {
-            double w_global = log10(N / token_entries.second.size());
-            for (const auto& id_tf : token_entries.second)
+            double w_global = log10(N / token2entries.second.size());
+            for (const auto& id2tf : token2entries.second)
             {
-                double& length = lengths[id_tf.first];
-                length = sqrt(pow(length, 2) + pow(id_tf.second * w_global, 2));
+                double& length = lengths[id2tf.first];
+                length = sqrt(pow(length, 2) + pow(id2tf.second * w_global, 2));
             }
         }
     }
@@ -103,23 +107,26 @@ public:
         for (int i = 0; i <= av_top_index(av); ++i)
         {
             std::string token = string_from_sv(*av_fetch(av, i, 0));
-            auto it = index.find(token);
-            if (it != index.end())
+            auto token2entries = index.find(token);
+            if (token2entries != index.end())
             {
-                double w_global = log10(N / it->second.size());
+                double w_global = log10(N / token2entries->second.size());
                 double w_query  = w_global; // FIXME this ain't right
 
-                for (const auto& id_tf : it->second)
-                {   rankings[id_tf.first] += w_global * w_query * id_tf.second; }
+                for (const auto& id2tf : token2entries->second)
+                {   rankings[id2tf.first] += w_global * w_query * id2tf.second; }
             }
         }
 
         AV* results = newAV();
-        for (const auto& p : rankings)
+        for (const auto& id2rank : rankings)
         {
-            AV* entry = newAV();
-            av_push(entry, newSViv(p.first));
-            av_push(entry, newSVnv(p.second / lengths.find(p.first)->second));
+            AV*    entry  = newAV();
+            double length = lengths.find(id2rank.first)->second;
+
+            av_push(entry, newSViv(id2rank.first));
+            av_push(entry, newSVnv(id2rank.second / length));
+
             av_push(results, newRV_noinc(reinterpret_cast<SV*>(entry)));
         }
 
@@ -128,29 +135,32 @@ public:
     }
 
 
+    /* Dump this index into Perl.
+     * Used in testing only. */
     SV* dump() const
     {
         HV* idx = newHV();
-        for (const auto& p : index)
+        for (const auto& token2entries : index)
         {
             HV* entries = newHV();
 
-            for (const auto& id_tf : p.second)
+            for (const auto& id2tf : token2entries.second)
             {
-                std::string k = std::to_string(id_tf.first);
+                std::string k = std::to_string(id2tf.first);
                 hv_store(entries, k.c_str(), k.size(),
-                         newSViv(id_tf.second), 0);
+                         newSViv(id2tf.second), 0);
             }
 
-            hv_store(idx, p.first.c_str(), p.first.size(),
+            hv_store(idx, token2entries.first.c_str(), token2entries.first.size(),
                      newRV_noinc(reinterpret_cast<SV*>(entries)), 0);
         }
 
         HV* len = newHV();
-        for (const auto& l : lengths)
+        for (const auto& id2length : lengths)
         {
-            std::string k = std::to_string(l.first);
-            hv_store(len, k.c_str(), k.size(), newSVpvf("%.2f", l.second), 0);
+            std::string id = std::to_string(id2length.first);
+            hv_store(len, id.c_str(), id.size(),
+                     newSVpvf("%.2f", id2length.second), 0);
         }
 
         HV* dump = newHV();
@@ -160,6 +170,21 @@ public:
     }
 
 
+    /* Stash this index into the given file.
+     * The file format is a simple binary file with the following structure:
+     *     lengths.size()
+     *     elements of lengths:
+     *         document id
+     *         length
+     *     index.size()
+     *     elements of index:
+     *         length of token
+     *         token
+     *         entries.size()
+     *         elements of entries:
+     *             document id
+     *             term frequency
+     * Returns wether writing succeeded. */
     bool stash(const char* path)
     {
         std::ofstream out(path);
@@ -170,22 +195,23 @@ public:
         }
 
         pack(lengths.size(), out);
-        for (const auto& doc : lengths)
+        for (const auto& id2length : lengths)
         {
-            pack(doc.first,  out);
-            pack(doc.second, out);
+            pack(id2length.first,  out);
+            pack(id2length.second, out);
         }
 
-        for (const auto& p : index)
+        pack(index.size(), out);
+        for (const auto& token2entries : index)
         {
-            pack(p.first.size(), out);
-            out.write(p.first.c_str(), p.first.size());
+            pack(token2entries.first.size(), out);
+            out << token2entries.first;
 
-            pack(p.second.size(), out);
-            for (const auto& id_tf : p.second)
+            pack(token2entries.second.size(), out);
+            for (const auto& id2tf : token2entries.second)
             {
-                pack(id_tf.first,  out);
-                pack(id_tf.second, out);
+                pack(id2tf.first,  out);
+                pack(id2tf.second, out);
             }
         }
 
@@ -193,7 +219,8 @@ public:
         return out.good();
     }
 
-
+    /* Reconstitutes a stashed file and returns wether it worked.
+     * See also `stash`. */
     bool unstash(const char* path)
     {
         std::ifstream in(path);
@@ -203,18 +230,22 @@ public:
             return false;
         }
 
-        auto docs = unpack<std::unordered_map<int, double>::size_type>(in);
-        while (docs--)
-        {   lengths[unpack<int>(in)] = unpack<double>(in); }
+        auto lengths_size = unpack<decltype(lengths)::size_type>(in);
+        while (lengths_size--)
+        {
+            int id      = unpack<int>(in);
+            lengths[id] = unpack<double>(in);
+        }
 
-        while (in.peek() != EOF)
+        auto index_size = unpack<decltype(index)::size_type>(in);
+        while (index_size--)
         {
             auto length = unpack<std::string::size_type>(in);
             std::string token(length, ' ');
             in.read(&token[0], length);
 
             auto& entries = index[token];
-            auto count = unpack<std::list<std::pair<int, int> >::size_type>(in);
+            auto count = unpack<decltype(index)::mapped_type::size_type>(in);
             while (count--)
             {
                 int id = unpack<int>(in);
@@ -233,6 +264,7 @@ private:
      * unless someone broke contract when calling `add_document`. */
     std::unordered_map<std::string, std::list<std::pair<int, int> > > index;
 
+    /* Map from document ID to document length. */
     std::unordered_map<int, double> lengths;
 
 };
