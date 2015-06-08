@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use feature     qw(say);
-use Encode      qw(decode);
+use Encode      qw(encode decode);
 use POSIX       qw(strftime);
 use Term::ReadLine;
 use Time::HiRes qw(gettimeofday tv_interval);
@@ -53,8 +53,10 @@ while (defined($_ = $term->readline('query: ')))
         local $SIG{PIPE} = 'IGNORE';
         my $pid = open my $pager, '|-', 'less' or die "Couldn't less: $!\n";
 
-        local $" = ' ';
-        say {$pager} "Query: @query (@$actual)";
+        my $raw       =                 join ' ', @query;
+        my $processed = encode 'UTF-8', join ' ', @$actual;
+
+        say {$pager} "Query: $raw ($processed)";
         say {$pager} scalar @$results, " results in $time_taken seconds";
         say {$pager} ' Rank |     ID     | Document';
         for (@$results)
