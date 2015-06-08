@@ -8,7 +8,7 @@ use Inline CPP => './VectorSpaceModel.cpp';
 
 package InvertedIndex;
 
-our $stemmer   = Lingua::Stem::Snowball->new(lang => 'en');
+our $stemmer   = Lingua::Stem::Snowball->new(lang => 'en', encoding => 'UTF-8');
 our %stopwords = map { $_ => undef } split ' ', <<HERE;
 a able about across after all almost also am among an and any are as at be
 because been but by can cannot could dear did do does either else ever every
