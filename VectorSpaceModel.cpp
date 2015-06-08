@@ -102,31 +102,14 @@ public:
     {
         AV* av = reinterpret_cast<AV*>(SvRV(tokens));
         std::unordered_map<std::string, int> query;
-
         for (int i = 0; i <= av_top_index(av); ++i)
         {
             std::string token = string_from_sv(*av_fetch(av, i, 0));
             ++query[token];
         }
 
-        const double N = lengths.size();
-        std::unordered_map<int, double> rankings;
-        for (const auto& token2w_query : query)
-        {
-            const std::string& token   = token2w_query.first;
-            const int        & w_query = token2w_query.second;
-
-            auto token2entries = index.find(token);
-            if (token2entries != index.end())
-            {
-                double w_global = log10(N / token2entries->second.size());
-                for (const auto& id2tf : token2entries->second)
-                {   rankings[id2tf.first] += w_global * w_query * id2tf.second; }
-            }
-        }
-
         AV* results = newAV();
-        for (const auto& id2rank : rankings)
+        for (const auto& id2rank : search(query))
         {
             AV*    entry  = newAV();
             double length = lengths.find(id2rank.first)->second;
@@ -274,5 +257,31 @@ private:
 
     /* Map from document ID to document length. */
     std::unordered_map<int, double> lengths;
+
+
+    /* Search the index and return a map of ranked results, using the TF-IDF
+     * method. The query is a map from token to query weight. */
+    std::unordered_map<int, double>
+    search(const std::unordered_map<std::string, int>& query) const
+    {
+        const double N = lengths.size();
+        std::unordered_map<int, double> rankings;
+
+        for (const auto& token2w_query : query)
+        {
+            const std::string& token   = token2w_query.first;
+            const int        & w_query = token2w_query.second;
+
+            auto token2entries = index.find(token);
+            if (token2entries != index.end())
+            {
+                double w_global = log10(N / token2entries->second.size());
+                for (const auto& id2tf : token2entries->second)
+                {   rankings[id2tf.first] += w_global * w_query * id2tf.second; }
+            }
+        }
+
+        return rankings;
+    }
 
 };
